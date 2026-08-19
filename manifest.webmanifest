@@ -1,0 +1,17 @@
+{
+  "name": "双轨工作台 · 在职 & 副业",
+  "short_name": "双轨工作台",
+  "description": "在职（影像/手术机器人/半导体）与副业（雷沃农机/坊子区招商）双轨管理工作台，支持离线使用与按频率自动更新。",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f6fb",
+  "theme_color": "#2563eb",
+  "scope": "/",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity"]
+}

@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<!-- 本工作台为本地单文件方案（资料库能力本次未加载成功，降级为 localStorage 离线存储）。全内联、零外部依赖、可离线使用。 -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="双轨工作台">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>双轨工作台 · 在职 & 副业</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --work:#2563eb; --work-soft:#eaf1ff; --side:#ea580c; --side-soft:#fff1e6;
+    --red:#dc2626; --green:#16a34a; --shadow:0 2px 10px rgba(17,24,39,.06);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55;
+    padding-bottom:env(safe-area-inset-bottom);}
+  .wrap{max-width:1080px;margin:0 auto;padding:14px 16px 40px}
+
+  /* header */
+  header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--work),var(--side));
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .logo svg{width:20px;height:20px}
+  h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.5px}
+  .sub-t{font-size:12px;color:var(--sub);margin-top:1px}
+  .brand{display:flex;align-items:center;gap:8px}
+  .ver-badge{font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--work),var(--side));
+    padding:2px 8px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
+  .head-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .sync{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);
+    background:#fff;border:1px solid var(--line);padding:5px 9px;border-radius:20px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#9ca3af}
+  .dot.on{background:var(--green)} .dot.off{background:var(--red)}
+  .btn{font-size:13px;border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:0 12px;height:36px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .btn:hover{border-color:#cbd5e1}
+  .btn.primary{background:var(--work);color:#fff;border-color:var(--work)}
+  .btn.ghost{background:transparent}
+  .btn svg{width:15px;height:15px}
+
+  .offline-note{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12.5px;
+    padding:9px 12px;border-radius:10px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+  .offline-note svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px}
+
+  .update-banner{display:none;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;font-size:12.5px;
+    padding:9px 12px;border-radius:10px;margin-bottom:12px;align-items:center;gap:8px;justify-content:space-between}
+  .update-banner.show{display:flex}
+  .update-banner .badge{font-size:11px;font-weight:700;background:#2563eb;color:#fff;padding:1px 7px;border-radius:999px}
+  .update-banner .actions{display:flex;gap:8px}
+
+  /* 更新中心 */
+  .update-center{max-width:520px;text-align:left;max-height:80vh;display:flex;flex-direction:column}
+  .update-center h3{margin:0 0 4px;font-size:17px}
+  .update-center p{color:var(--sub);font-size:13px;margin:0 0 12px}
+  .update-center .list{overflow:auto}
+  .freq-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+  .freq-row:first-of-type{border-top:none}
+  .freq-row .name{flex:1;min-width:0;font-weight:600;font-size:14px}
+  .freq-row .meta{font-size:12px;color:var(--sub);white-space:nowrap}
+  .freq-row select{font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .freq-row .stale{color:var(--red);font-weight:700}
+  .freq-row .fresh{color:var(--green)}
+  .update-center .footer{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .update-center .footer .btn{min-height:40px;justify-content:center}
+
+  /* 模块头部更新提示 */
+  .m-update{font-size:11px;color:var(--sub);display:flex;align-items:center;gap:6px}
+  .m-update .badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px}
+  .m-update .badge.stale{background:#fee2e2;color:#991b1b}
+  .m-update .badge.fresh{background:#f0fdf4;color:#166534}
+
+  /* layout: 左侧导航 + 右侧内容 */
+  .layout{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px}
+  .sidebar{flex:0 0 232px;position:sticky;top:14px}
+  .nav{display:flex;flex-direction:column;gap:10px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:14px 14px;border:1px solid var(--line);background:#fff;border-radius:12px;
+    cursor:pointer;transition:all .15s}
+  .nav-item svg{width:22px;height:22px;flex:0 0 22px;color:var(--sub)}
+  .nav-item .nav-t{display:flex;flex-direction:column;gap:2px;line-height:1.25}
+  .nav-item .t1{font-weight:700;font-size:15px}
+  .nav-item .t2{font-size:11px;color:var(--sub)}
+  .nav-item:hover{border-color:var(--accent)}
+  .nav-item.active[data-sec="work"]{border-color:var(--work);background:var(--work-soft);color:var(--work)}
+  .nav-item.active[data-sec="work"] svg{color:var(--work)}
+  .nav-item.active[data-sec="side"]{border-color:var(--side);background:var(--side-soft);color:var(--side)}
+  .nav-item.active[data-sec="side"] svg{color:var(--side)}
+  .main{flex:1;min-width:0}
+
+  /* 左侧二级菜单（桌面端默认展开） */
+  .sub-nav{display:flex;flex-direction:column;gap:2px;margin:0 0 6px 10px;padding-left:12px;border-left:2px solid var(--line)}
+  .sub-nav.open{display:flex}
+  .sub-item{display:block;padding:6px 10px;border-radius:8px;font-size:12.5px;color:var(--sub);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:background .12s,color .12s}
+  .sub-item:hover{background:#f1f5f9;color:#0f172a}
+  .sub-item.active{background:var(--accent);color:#fff;font-weight:600}
+  .module.flash{box-shadow:0 0 0 2px var(--accent);border-radius:var(--radius)}
+
+  /* today */
+  .today{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 16px;margin-bottom:16px}
+  .today h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:7px}
+  .today h2 .pill{font-size:11px;background:#fee2e2;color:var(--red);padding:1px 8px;border-radius:10px;font-weight:700}
+  .t-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px dashed var(--line)}
+  .t-item:first-of-type{border-top:none}
+  .t-badge{font-size:11px;padding:2px 7px;border-radius:8px;flex:0 0 auto;font-weight:600}
+  .b-over{background:#fee2e2;color:var(--red)} .b-today{background:#fef3c7;color:#b45309}
+  .b-soon{background:#e0f2fe;color:#0369a1}
+  .t-body{flex:1;min-width:0}
+  .t-title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t-meta{font-size:12px;color:var(--sub)}
+  .t-date{font-size:12px;color:var(--sub);margin-left:6px}
+  .t-handle{flex:0 0 auto;height:34px;padding:0 12px;border-radius:8px;border:none;background:var(--ink);color:#fff;
+    font-size:13px;cursor:pointer}
+  .t-empty{font-size:13px;color:var(--sub);padding:6px 0}
+
+  /* module */
+  .module{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    margin-bottom:16px;overflow:hidden}
+  .m-head{display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .m-ico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .m-ico svg{width:17px;height:17px}
+  .m-title{font-weight:700;font-size:15px}
+  .m-count{font-size:12px;color:var(--sub);margin-left:2px}
+  .m-add{margin-left:auto;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .m-add svg{width:15px;height:15px}
+  .m-cadence{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;
+    background:#f1f5f9;color:#475569}
+  .m-cadence.weekly{background:#eef2ff;color:#4338ca}
+  .m-cadence.daily{background:#fff1e6;color:#c2410c}
+
+  /* 周期检查 */
+  .c-checkbtn{flex:0 0 auto;height:30px;padding:0 10px;border-radius:7px;border:1px solid var(--line);
+    background:#fff;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--sub)}
+  .c-checkbtn:hover{border-color:#cbd5e1}
+  .c-checkbtn.done{border-color:var(--green);color:var(--green);background:#f0fdf4}
+  .c-checkbtn svg{width:13px;height:13px}
+  .c-cadence{margin:4px 0 0 29px;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--sub)}
+  .c-cadence .c-dot{width:7px;height:7px;border-radius:50%;background:#9ca3af;flex:0 0 auto}
+  .c-cadence.fresh .c-dot{background:var(--green)} .c-cadence.due .c-dot{background:var(--amber)}
+  .c-cadence .c-recheck{margin-left:auto;cursor:pointer;color:var(--work);text-decoration:underline;font-size:12px;
+    background:none;border:none;padding:0}
+
+  .m-body{padding:12px 16px}
+  .card{border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:10px;position:relative}
+  .card.done{opacity:.62}
+  .card .c-top{display:flex;align-items:flex-start;gap:9px}
+  .c-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);flex:0 0 auto;margin-top:2px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .c-check.on{background:var(--green);border-color:var(--green)}
+  .c-check.on svg{width:13px;height:13px}
+  .c-title{font-weight:600;font-size:14.5px;flex:1;min-width:0;word-break:break-word}
+  .c-del{width:30px;height:30px;border:none;background:transparent;color:#9ca3af;cursor:pointer;border-radius:7px;flex:0 0 auto}
+  .c-del:hover{background:#fef2f2;color:var(--red)}
+  .c-del svg{width:16px;height:16px}
+  .c-rows{margin:6px 0 0 29px;display:flex;flex-wrap:wrap;gap:5px 8px}
+  .chip{font-size:12px;background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:7px;
+    display:inline-flex;align-items:center;gap:4px}
+  .chip b{color:var(--sub);font-weight:600}
+  .chip.cat{background:#eef2ff;color:#4338ca}
+  .chip.imp-h{background:#fee2e2;color:var(--red)} .chip.imp-m{background:#fef3c7;color:#b45309} .chip.imp-l{background:#f1f5f9;color:#475569}
+  .chip.link a{color:var(--work);text-decoration:none}
+  .chip.link a:hover{text-decoration:underline}
+  .c-note{margin:6px 0 0 29px;font-size:13px;color:#374151;white-space:pre-wrap;word-break:break-word}
+  .c-pred{margin:8px 0 4px 29px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px}
+  .pred-main{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .pred-lab{font-size:12px;color:#9a3412}
+  .pred-val{font-size:15px;font-weight:700;color:#c2410c}
+  .pred-conf{font-style:normal;font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;background:#fff;border:1px solid currentColor}
+  .pred-sub{display:flex;gap:14px;flex-wrap:wrap;margin-top:5px;font-size:12px;color:#7c2d12}
+  .pred-sub b{color:#431407;font-weight:600}
+  .c-due{margin:6px 0 0 29px;font-size:12px;font-weight:600}
+  .c-due.over{color:var(--red)} .c-due.today{color:#b45309} .c-due.soon{color:#0369a1}
+  .c-actions{display:flex;gap:6px;margin:8px 0 0 29px;flex-wrap:wrap}
+  .c-act{font-size:12px;border:1px solid var(--side);color:var(--side);background:#fff;border-radius:7px;
+    padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+  .c-act:hover{background:var(--side-soft)}
+  .c-act svg{width:13px;height:13px}
+  .empty{font-size:13px;color:var(--sub);text-align:center;padding:14px 0}
+  .m-group{font-size:12.5px;font-weight:800;color:var(--side);letter-spacing:.5px;margin:18px 2px 10px;
+    display:flex;align-items:center;gap:10px}
+  .m-group::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* form */
+  .form{background:#fafbff;border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:12px;display:none}
+  .form.open{display:block}
+  .form .row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+  .form label{flex:1 1 200px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--sub)}
+  .form input,.form select,.form textarea{font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;
+    width:100%;font-family:inherit;color:var(--ink);background:#fff}
+  .form textarea{resize:vertical;min-height:56px}
+  .form .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+  .form .actions .btn{min-height:40px}
+
+  /* summary charts */
+  .summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{flex:1 1 150px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
+  .stat .s-val{font-size:22px;font-weight:800;line-height:1}
+  .stat .s-lab{font-size:12px;color:var(--sub);margin-top:3px}
+  .chart-card{flex:1 1 220px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    box-shadow:var(--shadow)}
+  .chart-card h3{font-size:13px;margin:0 0 8px;color:var(--sub);font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;margin-top:6px;color:var(--sub)}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px}
+
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;
+    z-index:50;padding:18px}
+  .mask.open{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:360px;width:100%;padding:20px;text-align:center}
+  .modal h3{margin:0 0 8px;font-size:17px}
+  .modal p{font-size:13.5px;color:var(--sub);margin:0 0 16px}
+  .modal .mbtns{display:flex;gap:10px}
+  .modal .mbtns .btn{flex:1;min-height:44px;justify-content:center;font-size:14px}
+  .btn.danger{background:var(--red);color:#fff;border-color:var(--red)}
+
+  .foot{text-align:center;font-size:11.5px;color:#9ca3af;margin-top:8px}
+  .hidden{display:none!important}
+
+  @media(max-width:768px){
+    .wrap{padding:12px 12px 60px}
+    h1{font-size:16px}
+    .sub-t{width:100%}
+    .head-right{width:100%;margin-left:0}
+    .btn{flex:1;justify-content:center}
+    .layout{flex-direction:column;gap:12px}
+    .sidebar{width:100%;flex:none;position:static}
+    .nav{flex-direction:row;flex-wrap:wrap}
+    .nav-item{flex:1}
+    .nav-item .t1{font-size:14px}
+    .sub-nav{display:none;width:100%;flex:1 1 100%;margin-left:0;padding-left:0;border-left:none}
+    .sub-nav.open{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px}
+    .sub-item{flex:0 0 auto}
+    .form label{flex:1 1 100%}
+    .summary .stat,.summary .chart-card{flex:1 1 100%}
+    .t-handle{height:40px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/>
+        <rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand">
+        <h1>双轨工作台</h1>
+        <span class="ver-badge" title="布局版本号：看到此徽标即是最新版">v20 · 二级菜单展开</span>
+      </div>
+      <div class="sub-t">在职 · 医疗设备系统工程师（影像/手术机器人/半导体）｜ 副业 · 雷沃农机 / 坊子区招商</div>
+    </div>
+    <div class="head-right">
+      <div class="sync"><span class="dot off"></span><span id="syncTxt">本地模式（离线存储）</span></div>
+      <button class="btn" id="btnUpdate" title="更新中心">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>更新
+      </button>
+      <button class="btn" id="btnExport" title="导出 JSON 备份">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出
+      </button>
+      <button class="btn" id="btnImport" title="导入恢复">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导入
+      </button>
+      <button class="btn" id="btnPLM" title="导出 PLM 对账单 Excel（报价·订单·发票·收付款汇总）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PLM对账单
+      </button>
+      <button class="btn ghost" id="btnResetSample" title="用最新示例刷新（保留自建条目）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>恢复示例
+      </button>
+      <button class="btn ghost" id="btnClear" title="清空数据">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>清空
+      </button>
+      <input type="file" id="fileInput" accept="application/json" class="hidden">
+    </div>
+  </header>
+
+  <div class="update-banner" id="updateBanner">
+    <div><span class="badge" id="updateBadge">0</span> <span id="updateBannerText">个模块内容需要更新</span></div>
+    <div class="actions">
+      <button class="btn" id="btnBannerUpdate">全部更新</button>
+      <button class="btn ghost" id="btnBannerSettings">更新设置</button>
+    </div>
+  </div>
+
+  <div class="offline-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>当前为<strong>本地存储模式</strong>：数据保存在本浏览器，换设备/清缓存会丢失。请定期点「导出」备份 JSON；如需多设备同步与在线链接，待资料库能力可用后可一键升级。</span>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <nav class="nav">
+        <div class="nav-item active" data-sec="work" id="tabWork">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <div class="nav-t"><span class="t1">在职</span><span class="t2">影像/手术机器人/半导体</span></div>
+        </div>
+        <div class="sub-nav" data-sec="work"></div>
+        <div class="nav-item" data-sec="side" id="tabSide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <div class="nav-t"><span class="t1">副业</span><span class="t2">雷沃 / 坊子区招商</span></div>
+        </div>
+        <div class="sub-nav" data-sec="side"></div>
+      </nav>
+    </aside>
+    <main class="main">
+      <section id="view"></section>
+    </main>
+  </div>
+
+  <div class="foot">双轨工作台 · 本地单文件 · 数据存于本浏览器（前缀 wb_dualwork_）</div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 id="mTitle">确认清空？</h3>
+    <p id="mText">此操作将删除全部数据且不可恢复，请再次确认。</p>
+    <div class="mbtns">
+      <button class="btn" id="mCancel">取消</button>
+      <button class="btn danger" id="mOk">确认清空</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="updateMask">
+  <div class="modal update-center">
+    <h3>更新中心</h3>
+    <p>设置各内容模块的更新频率。过期模块可一键刷新（仅刷新示例/派生内容，你自建的条目始终保留）。</p>
+    <div class="list" id="updateList"></div>
+    <div class="footer">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);margin-right:auto;cursor:pointer">
+        <input type="checkbox" id="autoUpdate"> 自动更新过期模块
+      </label>
+      <button class="btn" id="uCancel">取消</button>
+      <button class="btn primary" id="uUpdateAll">全部更新</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- 配置 ---------- */
+const STORE_KEY = "wb_dualwork_data";
+const SAMPLE_VER = "20260815-16"; // 示例数据版本；每次更新种子数据时递增，自动刷新示例（保留用户自建数据）
+const SECTIONS = {
+  work:{ title:"在职", sub:"医疗设备系统工程师", accent:"#2563eb", soft:"#eaf1ff",
+    modules:["work_trends","work_tech","work_skill"] },
+  side:{ title:"副业", sub:"雷沃农机", accent:"#ea580c", soft:"#fff1e6",
+    modules:["side_customer","side_supplier","side_product","side_order","side_quote","side_invoice"] }
+};
+const MODULES = {
+  work_trends:{ sec:"work", title:"行业动态", doneLabel:"已读", cadence:"weekly",
+    ico:'<path d="M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0z"/><polyline points="12 6 12 12 16 14"/>',
+    fields:[
+      {k:"title", label:"标题 / 主题", type:"text", required:true},
+      {k:"source", label:"来源", type:"text"},
+      {k:"cat", label:"分类", type:"select", options:["政策","技术","市场","竞品"]},
+      {k:"track", label:"关注领域", type:"select", options:["医疗影像设备","手术机器人","半导体设备","其他"]},
+      {k:"url", label:"链接", type:"url"},
+      {k:"note", label:"笔记 / 摘要", type:"textarea"},
+      {k:"due", label:"跟进截止", type:"date"}
+    ]},
+  work_tech:{ sec:"work", title:"技术追踪", doneLabel:"已掌握", cadence:"weekly",
+    ico:'<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    fields:[
+      {k:"title", label:"技术 / 方向", type:"text", required:true},
+      {k:"device", label:"设备方向", type:"select", options:["医疗影像设备","手术机器人","半导体设备","新能源设备","其他"]},
+      {k:"domain", label:"学科视角", type:"select", options:["机械","电气","软件","法规","AI"]},
+      {k:"status", label:"状态", type:"select", options:["关注","学习中","实践中","已掌握"]},
+      {k:"url", label:"学习资源", type:"url"},
+      {k:"note", label:"笔记", type:"textarea"},
+      {k:"due", label:"计划掌握", type:"date"}
+    ]},
+  work_skill:{ sec:"work", title:"技能提升", doneLabel:"已达成",
+    ico:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    fields:[
+      {k:"title", label:"能力项", type:"text", required:true},
+      {k:"cur", label:"当前水平(1-5)", type:"number"},
+      {k:"goal", label:"目标水平(1-5)", type:"number"},
+      {k:"course", label:"课程内容", type:"textarea"},
+      {k:"plan", label:"行动计划", type:"textarea"},
+      {k:"attach", label:"学习附件链接", type:"url"},
+      {k:"note", label:"备注", type:"textarea"},
+      {k:"due", label:"达成截止", type:"date"}
+    ]},
+  side_customer:{ sec:"side", title:"客户动态", doneLabel:"已处理", cadence:"daily", group:"客户与供应商拓展",
+    ico:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    fields:[
+      {k:"title", label:"事件 / 动态", type:"text", required:true},
+      {k:"dir", label:"方向", type:"select", options:["雷沃动态","坊子区招商引资","其他"]},
+      {k:"type", label:"类型", type:"select", options:["战略","产品","人事","招标","风险"]},
+      {k:"imp", label:"重要度", type:"select", options:["高","中","低"]},
+      {k:"date", label:"发生日期", type:"date"},
+      {k:"url", label:"来源链接（可点击）", type:"url", ph:"如 https://www.lovol.com"},
+      {k:"ysale", label:"关联年销售额机会(¥)", type:"text", ph:"如 ¥500 万"},
+      {k:"conf", label:"机会置信度", type:"select", options:["高","中","低"]},
+      {k:"relProduct", label:"可对接产品（潍坊库）", type:"multiselect", optionsKey:"productTitles"},
+      {k:"opp", label:"商机说明", type:"textarea"},
+      {k:"note", label:"我的行动 / 备注", type:"textarea"},
+      {k:"due", label:"跟进截止", type:"date"}
+    ]},
+  side_supplier:{ sec:"side", title:"供应商采购计划", doneLabel:"已下单", cadence:"daily", group:"客户与供应商拓展",
+    ico:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+    fields:[
+      {k:"title", label:"采购品类", type:"text", required:true},
+      {k:"date", label:"发布时间", type:"date"},
+      {k:"qty", label:"预计数量", type:"text"},
+      {k:"window", label:"预计时间窗", type:"text"},
+      {k:"status", label:"状态", type:"select", options:["潜在","确认","已下单"]},
+      {k:"url", label:"来源链接（可点击）", type:"url", ph:"如 供应商官网 / 招标页"},
+      {k:"sub", label:"我方替代份额(%)", type:"text", ph:"如 10"},
+      {k:"ysale", label:"我方年销售额预测(¥)", type:"text", ph:"如 ¥200 万"},
+      {k:"conf", label:"预测置信度", type:"select", options:["高","中","低"]},
+      {k:"relProduct", label:"我方可提供产品（潍坊库）", type:"multiselect", optionsKey:"productTitles"},
+      {k:"note", label:"备注", type:"textarea"},
+      {k:"due", label:"跟进截止", type:"date"}
+    ]},
+  side_product:{ sec:"side", title:"我方可提供的产品", doneLabel:"已对接", group:"客户与供应商拓展",
+    ico:'<path d="M20.59 13.41 13.42 20.59a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+    fields:[
+      {k:"title", label:"产品 / 方案名称", type:"text", required:true},
+      {k:"cat", label:"类别", type:"select", options:["零部件","软件","服务","整机"]},
+      {k:"fit", label:"适配场景", type:"text"},
+      {k:"price", label:"参考报价", type:"text"},
+      {k:"cust", label:"目标客户", type:"text"},
+      {k:"yqty", label:"年销量预测", type:"text", ph:"如 8000 套 / 120 个"},
+      {k:"unit", label:"单价(¥)", type:"text", ph:"如 ¥45/套 或 ¥1200/个"},
+      {k:"ysale", label:"年销售额预测(¥)", type:"text", ph:"如 ¥36 万"},
+      {k:"conf", label:"预测置信度", type:"select", options:["高","中","低"]},
+      {k:"basis", label:"预测依据", type:"textarea"},
+      {k:"note", label:"备注 / 优势", type:"textarea"},
+      {k:"due", label:"对接截止", type:"date"}
+    ]},
+  side_order:{ sec:"side", title:"订单", doneLabel:"已完成", group:"PLM 单据管理 · 订单 / 报价 / 发票",
+    ico:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+    fields:[
+      {k:"title", label:"订单号 / 客户", type:"text", required:true},
+      {k:"product", label:"产品 / 方案", type:"text"},
+      {k:"qty", label:"数量", type:"text"},
+      {k:"amount", label:"金额(¥)", type:"text"},
+      {k:"cost", label:"成本(¥)", type:"text"},
+      {k:"status", label:"状态", type:"select", options:["待确认","已下单","已发货","已完成"]},
+      {k:"quoteRef", label:"来源报价单", type:"ref", ref:"side_quote"},
+      {k:"due", label:"交付截止", type:"date"}
+    ]},
+  side_quote:{ sec:"side", title:"报价", doneLabel:"已接受", group:"PLM 单据管理 · 订单 / 报价 / 发票",
+    ico:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
+    fields:[
+      {k:"title", label:"报价单号 / 客户", type:"text", required:true},
+      {k:"product", label:"产品 / 方案", type:"text"},
+      {k:"price", label:"报价金额(¥)", type:"text"},
+      {k:"status", label:"状态", type:"select", options:["草稿","已发送","已接受","已过期"]},
+      {k:"due", label:"有效期至", type:"date"},
+      {k:"note", label:"备注", type:"textarea"}
+    ]},
+  side_invoice:{ sec:"side", title:"发票", doneLabel:"已收款", group:"PLM 单据管理 · 订单 / 报价 / 发票",
+    ico:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/>',
+    fields:[
+      {k:"title", label:"发票号 / 客户", type:"text", required:true},
+      {k:"orderRef", label:"来源订单", type:"ref", ref:"side_order"},
+      {k:"amount", label:"金额(¥)", type:"text"},
+      {k:"paid", label:"已收金额(¥)", type:"text"},
+      {k:"date", label:"开票日期", type:"date"},
+      {k:"status", label:"状态", type:"select", options:["已开","已寄送","已收款"]}
+    ]}
+};
+
+/* ---------- 潍坊文件夹产品库（供"我方可提供产品"一键加载） ----------
+   数据来源：雷沃农机_副业分析报告.html 第四节 / fighting/潍坊 文件夹
+   注意：这些是可对接雷沃链条的第三方产品机会，非我方自营；按行业单价区间做量级预估，正式以定点认证为准。 */
+const WEIFANG_PRODUCTS = [
+  {title:"CSC 轴承（国产替代）",cat:"零部件",fit:"传动系/行走系/液压泵/发动机轴承",price:"¥15-120/只",cust:"雷沃传动系各主机厂",yqty:"60-150 万只",unit:"¥35/只",ysale:"¥0.2-1.2 亿",conf:"中",basis:"替 SKF/FAG/NSK，IATF16949 汽车级，2023 销售≈10 亿；先以非核心位小批量验证再切主传动。",note:"欧洲研发背景，国产替代首选高利润品类。"},
+  {title:"高斯乐为传感器（国产替代）",cat:"零部件",fit:"智能农机定位/安全互锁/割台播深自动控制",price:"¥20-300/只",cust:"雷沃智能农机事业部",yqty:"50-200 万只",unit:"¥80/只",ysale:"¥0.3-2.0 亿",conf:"中",basis:"替 SICK/欧姆龙/基恩士，电感/电容/磁感应/光电/激光位移全系；进口溢价高。",note:"图像型 PDF，建议 OCR/索要可编辑资料深化。"},
+  {title:"上海柏莱传感操控件（渠道）",cat:"零部件",fit:"驾驶室操控/传感一站式采购",price:"代理差价",cust:"雷沃驾驶室配套",yqty:"30-100 万只",unit:"¥40/只",ysale:"¥0.1-1.2 亿",conf:"低",basis:"代理 IDEC/APEM/NKK/Autonics/RAFI + 高斯乐为，赚渠道差价。",note:"渠道商，靠品类宽度而非单品利润。"},
+  {title:"缆普 ÖLFLEX 线缆+EPIC 连接器（本地直供）",cat:"零部件",fit:"整车线束/传感器线缆/电驱播种机线束",price:"¥3-30/米 + 连接器",cust:"雷沃整车线束集成",yqty:"线缆500-1500万米+连接器300-800万只",unit:"¥8/米",ysale:"¥1.0-5.5 亿",conf:"中",basis:"上海临港本地化生产，国产化率目标90%、交期缩短40%+；与自营高防护连接器互补。",note:"德国品牌本地化直供，可与国产线缆厂对比降本。"},
+  {title:"格纳德 HMI 薄膜开关面板（本地直供）",cat:"零部件",fit:"拖拉机/收获机驾驶室控制面板",price:"¥300-1200/套",cust:"雷沃驾驶室配套",yqty:"2-6 万套",unit:"¥600/套",ysale:"¥0.08-0.72 亿",conf:"低",basis:"100万次寿命、IP65-68 耐振，奥地利品牌上海工厂。",note:"标品直供，毛利较薄，宜量大稳供+年降。"},
+  {title:"午马减速机（本地直供）",cat:"零部件",fit:"烘干机搅龙/风机、播种机/撒肥机辅助传动",price:"¥800-3000/台",cust:"雷沃农机具/烘干设备",yqty:"1-4 万台",unit:"¥1500/台",ysale:"¥0.08-1.2 亿",conf:"低",basis:"R/K/F/S 硬齿面四大系列，6级精度、效率96%+、IP54-55。",note:"标品直供，先用样品认证+体系审核推进。"},
+  {title:"牛顿增材激光熔覆/增材（再制造服务）",cat:"服务",fit:"雷沃再制造/大修/零部件修复",price:"按设备/工时",cust:"雷沃再制造体系",yqty:"20-80 台套（或按工时）",unit:"¥50万/台套",ysale:"¥0.04-0.8 亿",conf:"低",basis:"激光熔覆/淬火/增材装备+加工服务；无整机配套场景，转为服务创收。",note:"话术从卖设备转为帮雷沃做再制造降本。"}
+];
+// 由产品库构建"我方可提供产品"条目
+const WEIFANG_TITLES = WEIFANG_PRODUCTS.map(p=>p.title);
+const WEIFANG_MAP = {}; WEIFANG_PRODUCTS.forEach(p=>WEIFANG_MAP[p.title]=p);
+function buildWeifangProducts(){
+  return WEIFANG_PRODUCTS.map(p=>({ id:uid(), done:false, checked:0,
+    title:p.title, cat:p.cat, fit:p.fit, price:p.price, cust:p.cust,
+    yqty:p.yqty, unit:p.unit, ysale:p.ysale, conf:p.conf, basis:p.basis, note:p.note }));
+}
+// 根据客户动态 / 采购计划的「可对接产品」选择，重建"我方可提供产品"（删除原潍坊条目，仅保留用户手动添加的非库产品）
+function deriveProductsFromDynamics(state){
+  const want=new Set();
+  ["side_customer","side_supplier"].forEach(mk=>{
+    (state[mk]||[]).forEach(it=>{
+      let rp=it.relProduct; if(!rp) return;
+      const arr=Array.isArray(rp)?rp:(String(rp).split(/[、/|]/)).map(s=>s.trim()).filter(Boolean);
+      arr.forEach(t=>{ if(WEIFANG_MAP[t]) want.add(t); });
+    });
+  });
+  const existing=state.side_product||[];
+  const manual=existing.filter(x=>!WEIFANG_MAP[x.title]); // 用户手动添加、非潍坊库的产品保留
+  const fromLib=WEIFANG_PRODUCTS.filter(p=>want.has(p.title)).map(p=>({ id:uid(), done:false, checked:0, src:"lib",
+    title:p.title, cat:p.cat, fit:p.fit, price:p.price, cust:p.cust,
+    yqty:p.yqty, unit:p.unit, ysale:p.ysale, conf:p.conf, basis:p.basis, note:p.note }));
+  state.side_product=manual.concat(fromLib);
+}
+function syncProductsFromDynamics(){
+  deriveProductsFromDynamics(STATE);
+  save();
+}
+
+/* ---------- 更新频率与自动更新 ---------- */
+const DEFAULT_FREQ = {
+  work_trends:7, work_tech:7, work_skill:30,
+  side_customer:1, side_supplier:1, side_product:1
+};
+const CONTENT_MODULES = new Set(Object.keys(DEFAULT_FREQ));
+function freqOptions(){
+  return [
+    {v:0,t:"手动"},{v:1,t:"每天"},{v:2,t:"每 2 天"},{v:3,t:"每 3 天"},
+    {v:7,t:"每周"},{v:14,t:"每两周"},{v:30,t:"每月"}
+  ];
+}
+function freqLabel(days){
+  const o=freqOptions().find(x=>x.v===days); return o?o.t:"手动";
+}
+function ensureFreqState(obj){
+  obj = obj || STATE;
+  obj.freq = obj.freq || {};
+  obj.lastUpdate = obj.lastUpdate || {};
+  CONTENT_MODULES.forEach(mk=>{ if(!(mk in obj.freq)) obj.freq[mk]=DEFAULT_FREQ[mk]; });
+}
+function getFreq(mk){ return STATE.freq[mk] ?? DEFAULT_FREQ[mk] ?? 0; }
+function setFreq(mk,days){ STATE.freq[mk]=days; save(); renderUpdateBanner(); }
+function getLastUpdate(mk){ return STATE.lastUpdate[mk] || 0; }
+function setLastUpdate(mk,ts){ STATE.lastUpdate[mk]=ts; save(); }
+function daysSince(ts){ return (Date.now() - ts) / 86400000; }
+function isStale(mk){
+  const f=getFreq(mk); if(!f) return false;
+  const last=getLastUpdate(mk); if(!last) return true;
+  return daysSince(last) >= f;
+}
+function staleList(){ return [...CONTENT_MODULES].filter(isStale); }
+function lastUpdateText(mk){
+  const last=getLastUpdate(mk); if(!last) return "尚未更新";
+  const d=daysSince(last);
+  if(d<1/24) return "刚刚更新";
+  if(d<1) return Math.floor(d*24)+" 小时前";
+  if(d<30) return Math.floor(d)+" 天前";
+  return Math.floor(d/30)+" 个月前";
+}
+// 更新指定模块内容：示例模块重新生成示例（保留用户自建），派生产品重新派生
+function updateModuleContent(mk, silent){
+  if(!CONTENT_MODULES.has(mk)) return;
+  if(mk==="side_product"){
+    deriveProductsFromDynamics(STATE);
+  } else {
+    const fresh=seed(); // 重新取最新示例种子
+    const kept=(STATE[mk]||[]).filter(x=>!x.__sample);
+    const freshSample=(fresh[mk]||[]).filter(x=>x.__sample);
+    STATE[mk]=kept.concat(freshSample);
+    if(mk==="side_customer"||mk==="side_supplier") deriveProductsFromDynamics(STATE);
+  }
+  setLastUpdate(mk, Date.now());
+  if(!silent) render();
+}
+function autoUpdateDue(){
+  if(!STATE.autoUpdate) return 0;
+  let n=0;
+  staleList().forEach(mk=>{ updateModuleContent(mk,true); n++; });
+  if(n){ save(); render(); }
+  return n;
+}
+function renderUpdateBanner(){
+  const list=staleList();
+  const banner=$("#updateBanner"), badge=$("#updateBadge"), txt=$("#updateBannerText");
+  if(!banner) return;
+  if(list.length){ banner.classList.add("show"); badge.textContent=list.length; txt.textContent="个模块内容需要更新"; }
+  else { banner.classList.remove("show"); }
+}
+function openUpdateCenter(){
+  $("#updateMask").classList.add("open");
+  renderUpdateCenter();
+}
+function closeUpdateCenter(){ $("#updateMask").classList.remove("open"); }
+function renderUpdateCenter(){
+  const box=$("#updateList"); if(!box) return;
+  box.innerHTML="";
+  [...CONTENT_MODULES].forEach(mk=>{
+    const cfg=MODULES[mk];
+    const row=el("div","freq-row");
+    const info=el("div"); info.style.minWidth="0"; info.style.flex="1";
+    const name=el("div","name"); name.textContent=cfg.title;
+    const meta=el("div","meta"); meta.innerHTML=(isStale(mk)?'<span class="stale">需要更新</span> · ':'<span class="fresh">已最新</span> · ')+'上次：'+lastUpdateText(mk);
+    info.appendChild(name); info.appendChild(meta);
+    const sel=el("select");
+    freqOptions().forEach(o=>{ const op=el("option"); op.value=o.v; op.textContent=o.t; if(getFreq(mk)==o.v) op.selected=true; sel.appendChild(op); });
+    sel.onchange=()=>{ setFreq(mk, Number(sel.value)); renderUpdateCenter(); };
+    const btn=el("button","btn"); btn.textContent="更新"; btn.onclick=()=>{ updateModuleContent(mk,false); renderUpdateCenter(); render(); };
+    row.appendChild(info); row.appendChild(sel); row.appendChild(btn);
+    box.appendChild(row);
+  });
+  $("#autoUpdate").checked=!!STATE.autoUpdate;
+}
+
+/* ---------- 工具 ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (t,c)=>{const e=document.createElement(t); if(c) e.className=c; return e;};
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function addDays(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function dueClass(due){ if(!due) return ""; const t=todayStr(); if(due<t) return "over"; if(due===t) return "today"; if(due<=addDays(7)) return "soon"; return ""; }
+function dueText(due){ if(!due) return ""; const c=dueClass(due); if(c==="over") return "逾期 "+due; if(c==="today") return "今天截止 "+due; if(c==="soon") return "临近 "+due; return "截止 "+due; }
+// 周期检查新鲜度：每天/每周未检查的条目为 due（需今日处理），已检查的且未过期为 fresh
+function recheckFresh(mk,it){
+  if(!MODULES[mk].cadence) return "";
+  if(!it.checked) return "due";
+  const days=(todayStr().slice(0,10)===String(it.checkedAt||"").slice(0,10))?0:null;
+  if(days===0) return "fresh";
+  // 简单以 checkedAt 距今天数判断
+  const a=new Date(it.checkedAt), b=new Date();
+  const diff=Math.floor((b-a)/86400000);
+  if(MODULES[mk].cadence==="daily") return diff<=1?"fresh":"due";
+  return diff<=7?"fresh":"due";
+}
+// 解析金额：支持 "¥45/套"、"¥800 万"、"¥0.2-1.2 亿" 等；区间取中值用于预测汇总
+function parseMoney(s){ if(!s) return null; const str=String(s); let unit=1;
+  if(/亿/.test(str)) unit=100000000; else if(/万/.test(str)) unit=10000;
+  const nums=str.match(/[\d.]+/g); if(!nums||!nums.length) return null;
+  const vals=nums.map(x=>parseFloat(x)).filter(x=>!isNaN(x)); if(!vals.length) return null;
+  const n=vals.reduce((a,b)=>a+b,0)/vals.length;
+  return n*unit; }
+function fmtMoney(n){ const a=Math.abs(n); if(a>=100000000) return "¥"+(n/100000000).toFixed(2)+"亿"; if(a>=10000) return "¥"+(n/10000).toFixed(1)+"万"; return "¥"+n.toLocaleString(); }
+function calcProfit(amount,cost){ const a=parseMoney(amount), c=parseMoney(cost); if(a===null||c===null) return null; return a-c; }
+function calcUnpaid(amount,paid){ const a=parseMoney(amount); if(a===null) return null; const p=parseMoney(paid); return a-(p===null?0:p); }
+function gotoRef(refModule, refTitle){
+  activeSec=MODULES[refModule].sec; render();
+  const it=(STATE[refModule]||[]).find(x=>x.title===refTitle);
+  if(it) toggleForm(refModule, it.id);
+}
+// 报价→订单→发票 状态自动联动：返回发生的变更说明数组
+function applyLinkage(mk, it){
+  const changes=[];
+  if(mk==="side_order" && it.quoteRef){
+    const q=(STATE.side_quote||[]).find(x=>x.title===it.quoteRef);
+    if(q && q.status!=="已接受"){ q.status="已接受"; changes.push("报价《"+q.title+"》→ 已接受"); }
+  }
+  if(mk==="side_invoice" && it.orderRef && it.status==="已收款"){
+    const o=(STATE.side_order||[]).find(x=>x.title===it.orderRef);
+    if(o && o.status!=="已完成"){ o.status="已完成"; changes.push("订单《"+o.title+"》→ 已完成"); }
+  }
+  return changes;
+}
+// 删除级联提醒：返回该单据被下游引用的警告文案（用于删除确认）
+function cascadeWarnings(mk, it){
+  const w=[];
+  if(mk==="side_order"){
+    const invs=(STATE.side_invoice||[]).filter(x=>x.orderRef===it.title);
+    if(invs.length) w.push("该订单名下还有 "+invs.length+" 张发票引用它：\n  - "+invs.map(x=>x.title).join("\n  - ")+"\n删除后这些发票的「来源订单」将变为空，需手动处理。");
+  }
+  if(mk==="side_quote"){
+    const orders=(STATE.side_order||[]).filter(x=>x.quoteRef===it.title);
+    if(orders.length) w.push("该报价被 "+orders.length+" 张订单引用：\n  - "+orders.map(x=>x.title).join("\n  - ")+"\n删除后这些订单的「来源报价单」将变为空，需手动处理。");
+  }
+  return w;
+}
+// 根据订单一键生成对应发票草稿
+function genInvoiceFromOrder(order){
+  const year=new Date().getFullYear();
+  const invs=STATE.side_invoice||[];
+  let maxSeq=0;
+  invs.forEach(x=>{ const m=String(x.title).match(/INV-(\d{4})-(\d+)/); if(m && Number(m[1])===year) maxSeq=Math.max(maxSeq, parseInt(m[2],10)); });
+  const no="INV-"+year+"-"+String(maxSeq+1).padStart(3,"0");
+  const cust=order.title.indexOf(" ")>0 ? order.title.slice(order.title.indexOf(" ")+1) : order.title;
+  const inv={ id:uid(), title:no+" "+cust, orderRef:order.title, amount:order.amount||"", paid:"", date:todayStr(), status:"已开", done:false };
+  (STATE.side_invoice=STATE.side_invoice||[]).unshift(inv);
+  save();
+  activeSec="side"; render();
+  toggleForm("side_invoice", inv.id);
+  alert("已根据订单生成发票草稿《"+inv.title+"》，请补充「已收金额」后保存。");
+}
+
+// 根据客户动态 / 采购计划的「可对接产品」选择，刷新"我方可提供产品"（删除原潍坊条目，仅保留用户手动添加的非库产品）
+function loadWeifangProducts(){
+  const before=(STATE.side_product||[]).length;
+  syncProductsFromDynamics();
+  const after=(STATE.side_product||[]).filter(x=>x.src==="lib").length;
+  const manual=(STATE.side_product||[]).filter(x=>x.src!=="lib").length;
+  activeSec="side"; render();
+  alert("已按客户动态/采购计划的选择刷新「我方可提供产品」：\n• 潍坊库产品 "+after+" 条\n• 你手动添加的 "+manual+" 条已保留\n（产品完全由客户动态/采购计划中的「可对接产品」决定，原条目已清除。）");
+}
+
+/* ---------- PLM 对账单导出（零依赖 xlsx：store-zip + OOXML） ---------- */
+function crc32(buf){
+  const tb=(()=>{ const t=new Uint32Array(256);
+    for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++){ c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } t[n]=c>>>0; }
+    return t; })();
+  let c=0xFFFFFFFF;
+  for(let i=0;i<buf.length;i++){ c=tb[(c^buf[i])&0xFF]^(c>>>8); }
+  return (c^0xFFFFFFFF)>>>0;
+}
+function concatBytes(arr){ let total=0; arr.forEach(b=>total+=b.length);
+  const out=new Uint8Array(total); let p=0; arr.forEach(b=>{ out.set(b,p); p+=b.length; }); return out; }
+function zipStore(files){
+  const enc=new TextEncoder(); const parts=[]; const central=[]; let offset=0;
+  files.forEach(f=>{
+    const name=enc.encode(f.name); const data=f.data; const crc=crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0,true); lh.setUint16(8,0,true);
+    lh.setUint16(10,0,true); lh.setUint16(12,0,true); lh.setUint32(14,crc,true);
+    lh.setUint32(18,data.length,true); lh.setUint32(22,data.length,true); lh.setUint16(26,name.length,true); lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer)); parts.push(name); parts.push(data);
+    const ce=new DataView(new ArrayBuffer(46));
+    ce.setUint32(0,0x02014b50,true); ce.setUint16(4,20,true); ce.setUint16(6,20,true); ce.setUint16(8,0,true);
+    ce.setUint16(10,0,true); ce.setUint16(12,0,true); ce.setUint16(14,0,true);
+    ce.setUint32(16,crc,true); ce.setUint32(20,data.length,true); ce.setUint32(24,data.length,true);
+    ce.setUint16(28,name.length,true); ce.setUint16(30,0,true); ce.setUint16(32,0,true);
+    ce.setUint16(34,0,true); ce.setUint16(36,0,true); ce.setUint32(38,0,true); ce.setUint32(42,offset,true);
+    central.push(new Uint8Array(ce.buffer)); central.push(name);
+    offset += 30 + name.length + data.length;
+  });
+  const cdStart=offset; let cdSize=0; central.forEach(c=>cdSize+=c.length);
+  const eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true); eo.setUint16(4,0,true); eo.setUint16(6,0,true);
+  eo.setUint16(8,files.length,true); eo.setUint16(10,files.length,true);
+  eo.setUint32(12,cdSize,true); eo.setUint32(16,cdStart,true); eo.setUint16(20,0,true);
+  return concatBytes([...parts, ...central, new Uint8Array(eo.buffer)]);
+}
+function escXML(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function colRef(c){ let s=""; c++; while(c>0){ const m=(c-1)%26; s=String.fromCharCode(65+m)+s; c=Math.floor((c-1)/26); } return s; }
+function sheetXML(rows){
+  let maxCols=0; rows.forEach(r=>{ if(r.length>maxCols) maxCols=r.length; });
+  let s='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  s+='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  s+='<cols><col min="1" max="'+maxCols+'" width="18" customWidth="1"/></cols><sheetData>';
+  rows.forEach((row,r)=>{
+    s+='<row r="'+(r+1)+'">';
+    row.forEach((cell,c)=>{
+      const ref=colRef(c)+(r+1);
+      if(cell==null){ s+='<c r="'+ref+'"/>'; return; }
+      const sAttr=(r===0)?' s="1"':'';
+      if(cell.t==="n"){ s+='<c r="'+ref+'"'+sAttr+'><v>'+cell.v+'</v></c>'; }
+      else { s+='<c r="'+ref+'" t="inlineStr"'+sAttr+'><is><t xml:space="preserve">'+escXML(cell.v)+'</t></is></c>'; }
+    });
+    s+='</row>';
+  });
+  s+='</sheetData></worksheet>';
+  return s;
+}
+const _NS={ ct:"http://schemas.openxmlformats.org/package/2006/content-types",
+  rel:"http://schemas.openxmlformats.org/package/2006/relationships",
+  main:"http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+  off:"http://schemas.openxmlformats.org/officeDocument/2006/relationships" };
+function buildXLSX(sheets){
+  const enc=new TextEncoder(); const files=[];
+  files.push({name:"[Content_Types].xml", data:enc.encode(
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="'+_NS.ct+'">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+    sheets.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("")+
+    '</Types>')});
+  files.push({name:"_rels/.rels", data:enc.encode(
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="'+_NS.rel+'">'+
+    '<Relationship Id="rId1" Type="'+_NS.off+'/officeDocument" Target="xl/workbook.xml"/></Relationships>')});
+  files.push({name:"xl/styles.xml", data:enc.encode(
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="'+_NS.main+'">'+
+    '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'+
+    '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'+
+    '<borders count="1"><border/></borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+    '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>'+
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>')});
+  let wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="'+_NS.main+'" xmlns:r="'+_NS.off+'"><sheets>';
+  sheets.forEach((sh,i)=>{ wb+='<sheet name="'+escXML(sh.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>'; });
+  wb+='</sheets></workbook>';
+  files.push({name:"xl/workbook.xml", data:enc.encode(wb)});
+  let wbr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="'+_NS.rel+'">';
+  sheets.forEach((_,i)=>{ wbr+='<Relationship Id="rId'+(i+1)+'" Type="'+_NS.off+'/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>'; });
+  wbr+='<Relationship Id="rIdStyles" Type="'+_NS.off+'/styles" Target="styles.xml"/></Relationships>';
+  files.push({name:"xl/_rels/workbook.xml.rels", data:enc.encode(wbr)});
+  sheets.forEach((sh,i)=>{ files.push({name:"xl/worksheets/sheet"+(i+1)+".xml", data:enc.encode(sheetXML(sh.rows))}); });
+  return zipStore(files);
+}
+function num(v){ return (v===null||v===undefined||v==="")?null:v; }
+function exportPLMData(S){
+  const S2=S||{side_quote:[],side_order:[],side_invoice:[]};
+  const quote=(S2.side_quote||[]), order=(S2.side_order||[]), inv=(S2.side_invoice||[]);
+  const T=v=>({v,t:"s"}), N=v=>({v,t:"n"});
+  const qRows=[[T("报价单号/客户"),T("产品/方案"),T("报价金额(元)"),T("状态"),T("有效期至"),T("备注")]];
+  quote.forEach(q=> qRows.push([T(q.title),T(q.product),N(num(parseMoney(q.price))),T(q.status),T(q.due),T(q.note)]) );
+  const oRows=[[T("订单号/客户"),T("产品"),T("数量"),T("金额(元)"),T("成本(元)"),T("毛利(元)"),T("状态"),T("来源报价单"),T("交付截止")]];
+  order.forEach(o=>{ const p=calcProfit(o.amount,o.cost);
+    oRows.push([T(o.title),T(o.product),T(o.qty),N(num(parseMoney(o.amount))),N(num(parseMoney(o.cost))),N(num(p)),T(o.status),T(o.quoteRef),T(o.due)]); });
+  const iRows=[[T("发票号/客户"),T("金额(元)"),T("已收(元)"),T("未收(元)"),T("开票日期"),T("状态"),T("来源订单")]];
+  inv.forEach(i=>{ const u=calcUnpaid(i.amount,i.paid);
+    iRows.push([T(i.title),N(num(parseMoney(i.amount))),N(num(parseMoney(i.paid))),N(num(u)),T(i.date),T(i.status),T(i.orderRef)]); });
+  const sumRows=[[T("订单号/客户"),T("产品"),T("订单金额(元)"),T("成本(元)"),T("毛利(元)"),T("来源报价单"),T("关联发票号"),T("发票金额(元)"),T("已收(元)"),T("未收(元)"),T("订单状态")]];
+  let totAmt=0,totCost=0,totProfit=0,totPaid=0,totUnpaid=0,anyNum=false;
+  order.forEach(o=>{
+    const invObj=inv.find(x=>x.orderRef===o.title);
+    const p=calcProfit(o.amount,o.cost);
+    const amtN=parseMoney(o.amount), costN=parseMoney(o.cost);
+    const invAmt=invObj?parseMoney(invObj.amount):null;
+    const paid=invObj?parseMoney(invObj.paid):null;
+    const unpaid=invObj?calcUnpaid(invObj.amount,invObj.paid):null;
+    if(amtN!=null){ totAmt+=amtN; anyNum=true; }
+    if(costN!=null) totCost+=costN;
+    if(p!=null) totProfit+=p;
+    if(paid!=null) totPaid+=paid;
+    if(unpaid!=null) totUnpaid+=unpaid;
+    sumRows.push([T(o.title),T(o.product),N(num(amtN)),N(num(costN)),N(num(p)),T(o.quoteRef),
+      T(invObj?invObj.title:""),N(num(invAmt)),N(num(paid)),N(num(unpaid)),T(o.status)]);
+  });
+  if(anyNum){ sumRows.push([T("合计"),T(""),N(totAmt),N(totCost),N(totProfit),T(""),T(""),T(""),N(totPaid),N(totUnpaid),T("")]); }
+  return [ {name:"对账单汇总", rows:sumRows}, {name:"报价单", rows:qRows}, {name:"订单", rows:oRows}, {name:"发票", rows:iRows} ];
+}
+function exportPLM(){
+  try{
+    const sheets=exportPLMData(STATE);
+    const bytes=buildXLSX(sheets);
+    const blob=new Blob([bytes], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    const a=el("a"); a.href=URL.createObjectURL(blob);
+    a.download="PLM对账单_"+todayStr()+".xlsx"; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    alert("已导出 PLM 对账单（4 个工作表：对账单汇总 / 报价单 / 订单 / 发票）。");
+  }catch(e){ alert("导出失败："+e.message); }
+}
+
+/* ---------- 状态 ---------- */
+let STATE = load();
+let activeSec = "work";
+let editing = null; // {module, id}
+
+function load(){
+  try{
+    const r=localStorage.getItem(STORE_KEY);
+    if(r){
+      const obj=JSON.parse(r);
+      ensureFreqState(obj);
+      // 迁移：若旧数据没有 lastUpdate，则按频率视为已过期；首次会在启动后提示更新
+      // 脏数据自检：若本地仍含旧的虚构采购/示例（关键词命中），无论版本号如何都强制重置（先备份）
+      let dirty=false;
+      const DIRTY_KW=["液压阀块","电机驱动器","各品类整体","连接器组件 /","电控箱线束总成 /","远程运维 SaaS"];
+      for(const k in MODULES){ if((obj[k]||[]).some(x=>x&&x.title&&DIRTY_KW.some(w=>String(x.title).indexOf(w)>=0))){ dirty=true; break; } }
+      if(dirty){
+        try{ localStorage.setItem(STORE_KEY+"_backup_dirty", r); }catch(e){}
+        const fresh=seed(); persist(fresh);
+        alert("检测到旧版虚构示例数据，已自动用最新内容（"+SAMPLE_VER+"）强制刷新，并备份到 "+STORE_KEY+"_backup_dirty。\n现在采购计划为真实可溯源的雷沃招标需求，我方可提供产品已按最新动态派生。");
+        return fresh;
+      }
+      if(obj.SAMPLE_VER!==SAMPLE_VER){
+        // 是否已有「示例标记」（即本机制生效后的数据）
+        let hasFlag=false;
+        for(const k in MODULES){ if((obj[k]||[]).some(x=>x&&x.__sample)){ hasFlag=true; break; } }
+        if(hasFlag){
+          // 安全升级：保留用户自建（无 __sample），注入最新示例，重建派生产品
+          const fresh=seed();
+          for(const k in MODULES){
+            const kept=(obj[k]||[]).filter(x=>!x.__sample);
+            const freshSample=fresh[k].filter(x=>x.__sample);
+            obj[k]=kept.concat(freshSample);
+          }
+          obj.SAMPLE_VER=SAMPLE_VER;
+          deriveProductsFromDynamics(obj);
+          persist(obj);
+        } else {
+          // 旧版（迭代1-11）无标记：无法区分，整体以最新示例重置（先备份旧数据，防误删）
+          try{ localStorage.setItem(STORE_KEY+"_backup_legacy", r); }catch(e){}
+          const fresh=seed(); persist(fresh);
+          alert("示例数据已升级至 "+SAMPLE_VER+"，已用最新内容刷新。\n旧数据已自动备份（键名 "+STORE_KEY+"_backup_legacy），如需找回可恢复。\n之后你新建的条目都会自动保留，不会被覆盖。");
+          return fresh;
+        }
+      }
+      return obj;
+    }
+  }catch(e){}
+  const s=seed(); persist(s); return s;
+}
+function persist(obj){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }catch(e){ alert("保存失败："+e.message); } }
+function save(){ persist(STATE); }
+function seed(){
+  const s={};
+  for(const k in MODULES) s[k]=[];
+  // 示例数据（含 1 条逾期），聚焦重点赛道
+  s.work_trends.push({id:uid(),title:"FDA 发布 SaMD 软件即医疗器械新规草案",source:"FDA 官网",cat:"政策",track:"医疗影像设备",url:"https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-software-medical-device",note:"重点关注算法变更控制与生命周期要求，需研读并整理内部对照表。",due:addDays(-3),done:false});
+  s.work_trends.push({id:uid(),title:"2026 医疗 AI 影像诊断行业白皮书",source:"沙利文·东方财富",cat:"市场",track:"医疗影像设备",url:"https://finance.eastmoney.com/a/202608103836728385.html",note:"竞品格局与装机量趋势，AGI 时代数智医学影像生态。",due:addDays(4),done:false});
+  s.work_trends.push({id:uid(),title:"半导体设备国产化替代加速",source:"同花顺研报",cat:"市场",track:"半导体设备",url:"https://m.10jqka.com.cn/20260724/c678416857.shtml",note:"外部制裁强化自主可控，刻蚀/薄膜沉积/量测等环节国产替代加速。",due:addDays(6),done:false});
+  s.work_tech.push({id:uid(),title:"IEC 62304 医疗器械软件生命周期",source:"FDA 标准库",device:"医疗影像设备",domain:"法规",status:"学习中",url:"https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfstandards/detail.cfm?standard__identification_no=38829",note:"结合公司现有文档体系补齐，重点关注软件安全分级与变更控制。",due:addDays(10),done:false});
+  s.work_tech.push({id:uid(),title:"手术机器人机电软集成架构",source:"中国工程科学",device:"手术机器人",domain:"软件",status:"关注",url:"https://www.engineering.org.cn/sscae/CN/1212337293940413067",note:"机械臂控制 + 视觉 + 软件协同，关注系统集成化与自主化方向。",due:"",done:false});
+  s.work_tech.push({id:uid(),title:"半导体设备精密运动控制",source:"半导体设备技术",device:"半导体设备",domain:"电气",status:"关注",url:"https://www.chinsor.com/info/full-analysis-of-moving-parts-of-semiconductor-103254328.html",note:"纳米级定位、光栅反馈与振动抑制，关注双工件台与 EFEM 运动控制。",due:"",done:false});
+  s.work_tech.push({id:uid(),title:"新能源设备电池管理系统(BMS)集成",source:"BMS 技术",device:"新能源设备",domain:"电气",status:"关注",url:"https://www.iim.net.cn/2358/view-1853-1.html",note:"主从式架构、SOC/SOH 估算与功能安全(ISO 26262/21434)，机电软高度集成方向。",due:"",done:false});
+  s.work_skill.push({id:uid(),title:"系统需求工程与可追溯性",source:"",cur:3,goal:5,course:"INCOSE 系统工程手册 第3章 + 公司内部需求追溯模板实操练习",plan:"完成课程 + 内部项目实践",attach:"https://www.incose.org/",note:"",due:addDays(20),done:false});
+  s.side_customer.push({id:uid(),title:"雷沃发布新一代智能拖拉机车型",source:"雷沃官网",dir:"雷沃动态",type:"产品",imp:"高",date:addDays(-1),url:"https://www.lovol.com/m_news/m_medianews-detail-5271.htm",ysale:"¥800 万",conf:"中",relProduct:["CSC 轴承（国产替代）","高斯乐为传感器（国产替代）","缆普 ÖLFLEX 线缆+EPIC 连接器（本地直供）","格纳德 HMI 薄膜开关面板（本地直供）"],opp:"电控与传感升级带来国产连接器、线束、传感器、HMI 面板替代机会，按新车型 10% 渗透率测算。",note:"涉及电控与传感升级，可能带来新采购需求，需主动对接。",due:addDays(2),done:false});
+  s.side_customer.push({id:uid(),title:"雷沃海外业务扩张至中亚市场",source:"新闻",dir:"雷沃动态",type:"战略",imp:"中",date:addDays(-5),url:"https://www.lovol.com/news/medianews-detail-5268.htm",ysale:"¥300 万",conf:"低",relProduct:["上海柏莱传感操控件（渠道）","高斯乐为传感器（国产替代）","缆普 ÖLFLEX 线缆+EPIC 连接器（本地直供）"],opp:"海外服务网点需传感操控件与远程运维配套能力，可推渠道打包。",note:"关注本地化供应链机会。",due:"",done:false});
+  s.side_customer.push({id:uid(),title:"坊子区出台高端装备制造招商引资新政",source:"坊子区政府网",dir:"坊子区招商引资",type:"战略",imp:"中",date:addDays(-2),url:"http://www.fangzi.gov.cn/15/6443/1946382870356561920.html",ysale:"¥1000 万",conf:"低",relProduct:["午马减速机（本地直供）","牛顿增材激光熔覆/增材（再制造服务）","CSC 轴承（国产替代）"],opp:"政策红利可引入配套供应商落地坊子，扩大本地直供份额（减速机/增材再制造/轴承）。",note:"含厂房补贴与税收返还，适合引入配套供应商。",due:addDays(8),done:false});
+  s.side_supplier.push({id:uid(),title:"拖拉机轴承类零部件竞价（真实用量）",source:"雷沃招标公告·拖拉机工厂零部件竞价",dir:"采购需求",type:"竞价",imp:"中",date:"2022-11-22",url:"https://www.lovol.com/about/noticenews-detail-3097.htm",qty:"深沟球/滚针/圆锥滚子/带座轴承等数十项",window:"持续",status:"确认",sub:"10",ysale:"¥400 万",conf:"中",relProduct:["CSC 轴承（国产替代）"],note:"公告明细列明轴承为拖拉机/收获机真实持续用量（非虚构）。正式招标/定点须登录 SRM 供应商系统 srm.lovol.com 注册报名跟进，本公告为竞价处置，反映真实需求量级。",due:addDays(15),done:false});
+  s.side_supplier.push({id:uid(),title:"拖拉机线束/连接器类配件（真实用量）",source:"雷沃招标公告·采购中心预警资产",dir:"采购需求",type:"竞价",imp:"中",date:"2026-04-26",url:"https://www.lovol.com/about/noticenews-detail-5826.htm",qty:"显示器/方向盘/驾驶室/变速箱/主电源线束等多包",window:"持续",status:"潜在",sub:"15",ysale:"¥600 万",conf:"低",relProduct:["缆普 ÖLFLEX 线缆+EPIC 连接器（本地直供）","上海柏莱传感操控件（渠道）","格纳德 HMI 薄膜开关面板（本地直供）"],note:"公告明细列明线束与连接器为拖拉机真实持续用量（非虚构）。正式招标/定点须登录 SRM 供应商系统 srm.lovol.com 注册报名跟进；我方以高防护连接器+线缆本地直供切入，按份额测算。",due:"",done:false});
+  // 我方可提供产品：完全由客户动态 / 采购计划中的「可对接产品」决定（删除原独立条目，仅保留用户手动添加的非库产品）
+  s.side_product=[];
+  deriveProductsFromDynamics(s);
+  // PLM 单据（订单 / 报价 / 发票）
+  s.side_order.push({id:uid(),title:"LO-2026-001 雷沃潍坊工厂",product:"高防护连接器组件",qty:"8000 套",amount:"¥48 万",cost:"¥30 万",status:"已下单",quoteRef:"QT-2026-018 雷沃采购部",due:addDays(25),done:false});
+  s.side_quote.push({id:uid(),title:"QT-2026-018 雷沃采购部",product:"设备远程运维 SaaS 模块",price:"¥12 万/年",status:"已发送",due:addDays(12),note:"试点报价，含 3 个月免费期。",done:false});
+  s.side_invoice.push({id:uid(),title:"INV-2026-007 雷沃重工",amount:"¥48 万",paid:"¥20 万",orderRef:"LO-2026-001 雷沃潍坊工厂",date:addDays(-6),status:"已寄送",done:false});
+  // 标记示例数据（供版本升级时与用户自建数据区分；side_product 为派生，不标）
+  for(const k in MODULES){ if(k==="side_product") continue; (s[k]||[]).forEach(x=>{ x.__sample=true; }); }
+  s.SAMPLE_VER=SAMPLE_VER;
+  // 更新频率默认值与初始更新时间戳
+  s.freq={...DEFAULT_FREQ};
+  s.lastUpdate={}; CONTENT_MODULES.forEach(mk=> s.lastUpdate[mk]=Date.now() );
+  s.autoUpdate=false;
+  return s;
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  const view = $("#view");
+  document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active", x.dataset.sec===activeSec));
+  view.innerHTML="";
+  const sec = SECTIONS[activeSec];
+  // 今日区
+  view.appendChild(renderToday());
+  // 概览统计 + 图表
+  view.appendChild(renderSummary(sec));
+  // 模块（带分组标题）
+  let lastGroup;
+  sec.modules.forEach(mk=>{
+    const g=MODULES[mk].group;
+    if(g && g!==lastGroup){ const gh=el("div","m-group"); gh.textContent=g; view.appendChild(gh); lastGroup=g; }
+    view.appendChild(renderModule(mk));
+  });
+  updateSidebar();
+}
+
+function renderToday(){
+  const box=el("div","today");
+  const h=el("h2"); h.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg> 今天要处理 <span class="pill" id="todayPill">0</span>';
+  const pill=h.querySelector("#todayPill");
+  box.appendChild(h);
+  const items=[];
+  SECTIONS[activeSec].modules.forEach(mk=>{
+    (STATE[mk]||[]).forEach(it=>{
+      if(it.done) return;
+      const d=dueClass(it.due);
+      if(it.due && (d==="over"||d==="today"||d==="soon")) items.push({mk,it,d,t:"due"});
+      // 周期检查提醒：客户动态/采购计划（每天）、行业动态/技术追踪（每周）
+      if(MODULES[mk].cadence && !it.checked){
+        const cad=MODULES[mk].cadence==="daily"?"每天检查":"每周检查";
+        items.push({mk,it,d:"soon",t:"cad",cad});
+      }
+    });
+  });
+  items.sort((a,b)=> (a.d==="over"?0:a.d==="today"?1:a.d==="soon"?2:3)-(b.d==="over"?0:b.d==="today"?1:b.d==="soon"?2:3));
+  if(pill) pill.textContent=items.length;
+  if(items.length===0){ const e=el("div","t-empty"); e.textContent="暂无逾期或临近的待办，保持节奏 👍"; box.appendChild(e); return box; }
+  items.forEach(({mk,it,d,t})=>{
+    const row=el("div","t-item");
+    const badge=el("span","t-badge "+(d==="over"?"b-over":d==="today"?"b-today":"b-soon"));
+    let btext, btitle;
+    if(t==="cad"){ btext="待检查"; btitle=MODULES[mk].cadence==="daily"?"每天检查":"每周检查"; badge.textContent=btext; }
+    else { btext=d==="over"?"逾期":d==="today"?"今天":"临近"; badge.textContent=btext; }
+    const body=el("div","t-body");
+    const tt=el("div","t-title"); tt.textContent=it.title;
+    const meta=el("div","t-meta"); meta.textContent=MODULES[mk].title;
+    const dt=el("span","t-date"); dt.textContent= t==="cad" ? (MODULES[mk].cadence==="daily"?"需每日检查更新":"需每周检查更新") : dueText(it.due);
+    meta.appendChild(dt); body.appendChild(tt); body.appendChild(meta);
+    const btn=el("button","t-handle");
+    if(t==="cad"){ btn.textContent="标记已检查"; btn.onclick=()=>{ it.checked=1; it.checkedAt=todayStr(); save(); render(); }; }
+    else { btn.textContent="标记处理"; btn.onclick=()=>{ it.done=true; save(); render(); }; }
+    row.appendChild(badge); row.appendChild(body); row.appendChild(btn);
+    box.appendChild(row);
+  });
+  return box;
+}
+
+function renderSummary(sec){
+  const wrap=el("div","summary");
+  if(activeSec==="work"){
+    const skills=STATE.work_skill||[];
+    const unread=(STATE.work_trends||[]).filter(x=>!x.done).length;
+    wrap.appendChild(statCard(unread,"行业动态未读"));
+    wrap.appendChild(statCard(skills.length,"技能提升项"));
+    wrap.appendChild(chartCard("技术追踪状态分布", donutChart(
+      groupCount(STATE.work_tech,"status"), statusColors), legendFor(STATE.work_tech,"status",statusColors)));
+  }else{
+    const pending=(STATE.side_customer||[]).filter(x=>!x.done).length;
+    const openOrders=(STATE.side_order||[]).filter(x=>x.status!=="已完成").length;
+    const openInv=(STATE.side_invoice||[]).filter(x=>x.status!=="已收款").length;
+    const products=STATE.side_product||[];
+    const customers=STATE.side_customer||[];
+    const suppliers=STATE.side_supplier||[];
+    const prodPred=products.reduce((a,x)=>a+(parseMoney(x.ysale)||0),0);
+    const custPred=customers.reduce((a,x)=>a+(parseMoney(x.ysale)||0),0);
+    const suppPred=suppliers.reduce((a,x)=>a+(parseMoney(x.ysale)||0),0);
+    const predColor={零部件:"#ea580c",软件:"#0ea5e9",服务:"#8b5cf6",整机:"#16a34a"};
+    const linkColor={"客户动态":"#ea580c","采购计划":"#0ea5e9","我方产品":"#16a34a"};
+    wrap.appendChild(statCard(pending,"客户动态待处理"));
+    wrap.appendChild(statCard(openOrders,"进行中订单"));
+    wrap.appendChild(statCard(openInv,"未结清发票"));
+    wrap.appendChild(statCard(fmtMoney(custPred),"动态商机合计"));
+    wrap.appendChild(statCard(fmtMoney(suppPred),"采购预测合计"));
+    wrap.appendChild(statCard(fmtMoney(prodPred),"产品年销售预测合计"));
+    wrap.appendChild(chartCard("报价状态分布", donutChart(
+      groupCount(STATE.side_quote,"status"), statusColors), legendFor(STATE.side_quote,"status",statusColors)));
+    wrap.appendChild(chartCard("产品类别预测分布", donutChart(
+      groupCount(products,"cat"), predColor), legendFor(products,"cat",predColor)));
+    wrap.appendChild(chartCard("全链路预测汇总(按来源)", donutChart(
+      {"客户动态":custPred,"采购计划":suppPred,"我方产品":prodPred}, linkColor),
+      legendFor([{k:"客户动态"},{k:"采购计划"},{k:"我方产品"}],"k",linkColor)));
+  }
+  return wrap;
+}
+function statCard(val,lab){ const c=el("div","stat"); c.innerHTML='<div><div class="s-val">'+val+'</div><div class="s-lab">'+lab+'</div></div>'; return c; }
+function chartCard(title,svg,legend){ const c=el("div","chart-card"); const h=el("h3"); h.textContent=title; c.appendChild(h); c.insertAdjacentHTML("beforeend",svg); if(legend) c.insertAdjacentHTML("beforeend",legend); return c; }
+
+const statusColors={ "关注":"#93c5fd","学习中":"#60a5fa","实践中":"#3b82f6","已掌握":"#1d4ed8",
+  "潜在":"#fdba74","确认":"#fb923c","已下单":"#ea580c",
+  "政策":"#a78bfa","技术":"#60a5fa","市场":"#34d399","竞品":"#f472b6",
+  "高":"#dc2626","中":"#f59e0b","低":"#9ca3af" };
+function groupCount(arr,key){ const m={}; (arr||[]).forEach(x=>{ const v=x[key]||"未分类"; m[v]=(m[v]||0)+1; }); return m; }
+function legendFor(arr,key,colors){ const m=groupCount(arr,key); let s='<div class="legend">'; for(const k in m){ s+='<span><i style="background:'+(colors[k]||"#cbd5e1")+'"></i>'+esc(k)+" "+m[k]+"</span>"; } return s+"</div>"; }
+
+function donutChart(counts,colors){
+  const entries=Object.entries(counts); const total=entries.reduce((a,[,v])=>a+v,0);
+  if(total===0) return '<svg viewBox="0 0 120 90" width="100%" height="90"><text x="60" y="50" text-anchor="middle" fill="#9ca3af" font-size="11">暂无数据</text></svg>';
+  const r=34,c=2*Math.PI*r,cx=46,cy=45; let off=0; let segs="";
+  entries.forEach(([k,v])=>{ const len=v/total*c; const col=(colors&&colors[k])||"#cbd5e1";
+    segs+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="11" stroke-dasharray="'+len+' '+(c-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+    off+=len; });
+  const pct=Math.round(entries[0][1]/total*100);
+  return '<svg viewBox="0 0 220 90" width="100%" height="90">'+segs+'<text x="46" y="49" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2937">'+total+'</text><text x="160" y="40" font-size="11" fill="#6b7280">分类</text><text x="160" y="58" font-size="11" fill="#6b7280">'+(entries.map(([k])=>k).join("·")||"-")+'</text></svg>';
+}
+function barChart(counts){
+  const entries=Object.entries(counts); if(entries.length===0) return '<svg viewBox="0 0 200 60" width="100%" height="60"><text x="100" y="35" text-anchor="middle" fill="#9ca3af" font-size="11">暂无数据</text></svg>';
+  const max=Math.max(...entries.map(([,v])=>v)); let s='<svg viewBox="0 0 220 90" width="100%" height="90">';
+  entries.forEach(([k,v],i)=>{ const w=Math.max(6,v/max*150); const y=12+i*24; const col=statusColors[k]||"#cbd5e1";
+    s+='<text x="4" y="'+(y+11)+'" font-size="10" fill="#6b7280">'+esc(k)+'</text>';
+    s+='<rect x="44" y="'+y+'" width="'+w+'" height="14" rx="4" fill="'+col+'"/>';
+    s+='<text x="'+(44+w+4)+'" y="'+(y+11)+'" font-size="10" fill="#374151">'+v+'</text>'; });
+  return s+"</svg>";
+}
+
+function renderModule(mk){
+  const cfg=MODULES[mk]; const sec=SECTIONS[cfg.sec];
+  const box=el("div","module"); box.id="mod-"+mk;
+  const head=el("div","m-head");
+  const ico=el("div","m-ico"); ico.style.background=sec.soft; ico.style.color=sec.accent;
+  ico.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+cfg.ico+'</svg>';
+  const title=el("div"); title.style.display="flex"; title.style.alignItems="center"; title.style.gap="8px"; title.style.flexWrap="wrap"; title.style.flex="1 1 auto";
+  title.innerHTML='<span class="m-title">'+cfg.title+'</span> <span class="m-count">'+(STATE[mk]||[]).length+' 条</span>';
+  if(cfg.cadence){ const cd=el("span","m-cadence "+cfg.cadence); cd.textContent=cfg.cadence==="weekly"?"每周检查":"每天检查"; title.appendChild(cd); }
+  if(CONTENT_MODULES.has(mk)){
+    const mu=el("div","m-update");
+    const stale=isStale(mk);
+    mu.innerHTML='<span class="badge '+(stale?"stale":"fresh")+'">'+(stale?"需更新":"已最新")+'</span><span>'+lastUpdateText(mk)+' · '+freqLabel(getFreq(mk))+'</span>';
+    title.appendChild(mu);
+  }
+  const add=el("button","m-add"); add.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加';
+  add.onclick=()=>toggleForm(mk,null);
+  head.appendChild(ico); head.appendChild(title); head.appendChild(add);
+  if(mk==="side_product"){
+    const wf=el("button","m-add"); wf.style.color="var(--side)"; wf.style.borderColor="var(--side)";
+    wf.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>按动态刷新产品';
+    wf.onclick=loadWeifangProducts;
+    head.appendChild(wf);
+  }
+  box.appendChild(head);
+  const body=el("div","m-body");
+  // form
+  const form=el("div","form"); form.id="form_"+mk;
+  form.appendChild(buildForm(mk,null));
+  body.appendChild(form);
+  // list
+  const list=STATE[mk]||[];
+  if(list.length===0){ const e=el("div","empty"); e.textContent="暂无数据，点「添加」开始记录"; body.appendChild(e); }
+  list.forEach(it=> body.appendChild(renderCard(mk,it)));
+  box.appendChild(body);
+  return box;
+}
+
+// 通用预测块：客户动态(机会)/采购计划(我方份额预测)/我方产品(销量+金额)
+function renderPredBlock(mk,it){
+  const confColor={高:"#047857",中:"#b45309",低:"#dc2626"};
+  const box=el("div","c-pred");
+  const ys=parseMoney(it.ysale);
+  if(ys!==null){
+    let lab="年销售额预测", extra="";
+    if(mk==="side_customer"){ lab="关联年销售额机会"; }
+    else if(mk==="side_supplier"){ lab="我方年销售额预测"; }
+    if(it.conf) extra=" <i class=\"pred-conf\" style=\"color:"+(confColor[it.conf]||"#6b7280")+"\">"+it.conf+"置信</i>";
+    const main=el("div","pred-main"); main.innerHTML="<span class=\"pred-lab\">"+lab+"</span><span class=\"pred-val\">"+fmtMoney(ys)+extra+"</span>";
+    box.appendChild(main);
+  }
+  const sub=el("div","pred-sub");
+  if(mk==="side_product"){
+    if(it.yqty) sub.innerHTML+="<span>年销量预测：<b>"+esc(it.yqty)+"</b></span>";
+    if(it.unit) sub.innerHTML+="<span>单价：<b>"+esc(it.unit)+"</b></span>";
+    if(it.cust) sub.innerHTML+="<span>目标客户：<b>"+esc(it.cust)+"</b></span>";
+  } else {
+    if(it.sub && mk==="side_supplier") sub.innerHTML+="<span>我方替代份额：<b>"+esc(it.sub)+"%</b></span>";
+    if(it.relProduct) sub.innerHTML+="<span>"+(mk==="side_supplier"?"我方可提供：":"可对接产品：")+"<b>"+esc(it.relProduct)+"</b></span>";
+  }
+  if(sub.innerHTML) box.appendChild(sub);
+  const basis=mk==="side_product"?it.basis:it.opp;
+  if(basis) box.appendChild(Object.assign(el("div","c-note"),{textContent:(mk==="side_customer"?"商机说明：":"预测依据：")+basis}));
+  return box;
+}
+
+function renderCard(mk,it){
+  const cfg=MODULES[mk]; const card=el("div","card"+(it.done?" done":""));
+  const top=el("div","c-top");
+  const chk=el("div","c-check"+(it.done?" on":""));
+  if(it.done) chk.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  chk.onclick=()=>{ it.done=!it.done; save(); render(); };
+  const tt=el("div","c-title"); tt.textContent=it.title;
+  const edit=el("button","c-del"); edit.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
+  edit.title="编辑"; edit.onclick=()=>toggleForm(mk,it.id);
+  // 周期检查按钮（客户动态/采购计划 每天；行业动态/技术追踪 每周）
+  let checkBtn=null;
+  if(cfg.cadence){
+    checkBtn=el("button","c-checkbtn"+(it.checked?" done":""));
+    const fresh=recheckFresh(mk,it);
+    checkBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+(it.checked?("已检查·"+fresh):"标记已检查");
+    checkBtn.onclick=()=>{ it.checked=(it.checked?0:1); if(it.checked) it.checkedAt=todayStr(); save(); render(); };
+  }
+  const del=el("button","c-del"); del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+  del.title="删除"; del.onclick=()=>{ const w=cascadeWarnings(mk,it); let msg="确定删除该项？"; if(w.length) msg+="\n\n⚠ 关联提醒：\n"+w.join("\n\n"); if(confirm(msg)){ STATE[mk]=STATE[mk].filter(x=>x.id!==it.id); save(); render(); } };
+  top.appendChild(chk); top.appendChild(tt); if(checkBtn) top.appendChild(checkBtn); top.appendChild(edit); top.appendChild(del);
+  card.appendChild(top);
+  // 周期检查状态行
+  if(cfg.cadence){
+    const cd=el("div","c-cadence "+(recheckFresh(mk,it)));
+    let txt;
+    if(!it.checked) txt=cfg.cadence==="daily"?"每天检查更新":"每周检查更新";
+    else txt="上次检查："+(it.checkedAt||"—");
+    cd.innerHTML='<span class="c-dot"></span><span>'+txt+'</span>';
+    const rk=el("button","c-recheck"); rk.textContent=it.checked?"重新检查":"去检查";
+    rk.onclick=()=>{ it.checked=1; it.checkedAt=todayStr(); save(); render(); };
+    cd.appendChild(rk);
+    card.appendChild(cd);
+  }
+  // chips
+  const rows=el("div","c-rows");
+  cfg.fields.forEach(f=>{
+    if(f.k==="title") return;
+    if(f.type==="ref"){ if(it[f.k]){ const up=(STATE[f.ref]||[]).find(x=>x.title===it[f.k]); const st=up&&up.status?(" · "+up.status):""; const chip=el("span","chip link"); chip.innerHTML="<b>"+esc(f.label)+"</b> <a href='javascript:void(0)'>"+esc(it[f.k])+(st?("<span style='color:#6b7280'>"+esc(st)+"</span>"):"")+"</a>"; chip.querySelector("a").onclick=()=>gotoRef(f.ref, it[f.k]); rows.appendChild(chip); } return; }
+    let v=it[f.k];
+    // 若已存在「原始链接(url)+来源(source)」，来源不再单独成行，合并到链接 chip
+    if(f.k==="source" && it.url && it.source) return;
+    if(v===""||v==null) return;
+    const chip=el("span","chip");
+    if(f.type==="select"){ chip.className+=" "+(f.k==="cat"?"cat":f.k==="imp"?"imp-"+({高:"h",中:"m",低:"l"}[v]||""):""); chip.innerHTML="<b>"+esc(f.label)+"</b> "+esc(v); }
+    else if(f.type==="url"){ chip.className+=" link"; const srctxt=it.source?it.source:"查看"; chip.innerHTML="<b>原始链接</b> <a href='"+esc(v)+"' target='_blank' rel='noopener'>"+esc(srctxt)+" ↗</a>"; }
+    else if(f.type==="number"){ chip.innerHTML="<b>"+esc(f.label)+"</b> "+esc(v); }
+    else if(f.type==="multiselect"){ if(!Array.isArray(v)||!v.length) return; const txt=v.map(x=>"<b>"+esc(x)+"</b>").join("、"); chip.innerHTML="<b>"+esc(f.label)+"：</b> "+txt; }
+    else { chip.innerHTML="<b>"+esc(f.label)+"</b> "+esc(v); }
+    rows.appendChild(chip);
+  });
+  // PLM 衍生指标
+  if(mk==="side_order"){ const m=calcProfit(it.amount,it.cost); if(m!==null){ const chip=el("span","chip"); chip.style.background="#ecfdf5"; chip.style.color="#047857"; chip.innerHTML="<b>毛利(估算)</b> "+fmtMoney(m); rows.appendChild(chip); } }
+  if(mk==="side_invoice"){ const u=calcUnpaid(it.amount,it.paid); if(u!==null){ const chip=el("span","chip"); const settled=u<=0; chip.style.background=settled?"#ecfdf5":"#fef3c7"; chip.style.color=settled?"#047857":"#b45309"; chip.innerHTML="<b>"+(settled?"已结清":"未收(估算)")+"</b> "+fmtMoney(Math.abs(u)); rows.appendChild(chip); } }
+  if(rows.children.length) card.appendChild(rows);
+
+  // 预测指标（客户动态 / 采购计划 / 我方产品 通用）
+  if(mk==="side_customer"||mk==="side_supplier"||mk==="side_product"){
+    const box=renderPredBlock(mk,it);
+    if(box && box.children.length) card.appendChild(box);
+  }
+  // note (textarea)
+  cfg.fields.forEach(f=>{ if(f.type==="textarea" && it[f.k]){ const n=el("div","c-note"); n.textContent=it[f.k]; card.appendChild(n); } });
+  // due
+  if(it.due){ const d=el("div","c-due "+dueClass(it.due)); d.textContent=dueText(it.due)+"（"+cfg.doneLabel+"）"; card.appendChild(d); }
+  // 订单：已下单/已发货时一键生成发票草稿
+  if(mk==="side_order" && (it.status==="已下单"||it.status==="已发货")){
+    const acts=el("div","c-actions");
+    const b=el("button","c-act");
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg> 生成发票草稿';
+    b.onclick=()=>genInvoiceFromOrder(it);
+    acts.appendChild(b); card.appendChild(acts);
+  }
+  return card;
+}
+
+/* ---------- 表单 ---------- */
+function buildForm(mk,editItem){
+  const cfg=MODULES[mk];
+  const wrap=el("div");
+  const row=el("div","row");
+  cfg.fields.forEach(f=>{
+    const lab=el("label"); lab.textContent=f.label+(f.required?" *":"");
+    let inp;
+    if(f.type==="select"){ inp=el("select"); f.options.forEach(o=>{ const op=el("option"); op.value=o; op.textContent=o; inp.appendChild(op); }); }
+    else if(f.type==="textarea"){ inp=el("textarea"); }
+    else if(f.type==="multiselect"){ const opts=(f.optionsKey==="productTitles")?WEIFANG_TITLES:(f.options||[]); const box=el("div","cbx"); const sel=Array.isArray(editItem&&editItem[f.k])?editItem[f.k]:[];
+      opts.forEach(o=>{ const idk="cb_"+mk+"_"+f.k+"_"+o;
+        const lbl=el("label","cbx-item"); lbl.setAttribute("for",idk);
+        const cb=el("input"); cb.type="checkbox"; cb.id=idk; cb.dataset.k=f.k; cb.value=o; if(sel.includes(o)) cb.checked=true;
+        const sp=el("span"); sp.textContent=o; lbl.appendChild(cb); lbl.appendChild(sp); box.appendChild(lbl); });
+      inp=box; inp.dataset.k=f.k; lab.appendChild(inp); row.appendChild(lab); return; }
+    else if(f.type==="ref"){ inp=el("select"); const o0=el("option"); o0.value=""; o0.textContent="— 无 —"; inp.appendChild(o0);
+      (STATE[f.ref]||[]).forEach(o=>{ if(!o.title) return; const op=el("option"); op.value=o.title; op.textContent=o.title; inp.appendChild(op); });
+      inp.dataset.k=f.k; if(editItem) inp.value=editItem[f.k]||""; lab.appendChild(inp); row.appendChild(lab); return; }
+    else { inp=el("input"); inp.type=f.type==="number"?"number":f.type==="date"?"date":f.type==="url"?"url":"text"; }
+    inp.dataset.k=f.k; if(editItem) inp.value=editItem[f.k]||"";
+    lab.appendChild(inp); row.appendChild(lab);
+  });
+  wrap.appendChild(row);
+  const acts=el("div","actions");
+  const ok=el("button","btn primary"); ok.style.minHeight="40px"; ok.textContent=editItem?"保存修改":"添加";
+  ok.onclick=()=>{
+    const data={}; let okValid=true; const oldRefs={};
+    if(editItem){ cfg.fields.forEach(f=>{ if(f.type==="ref") oldRefs[f.k]=editItem[f.k]||""; }); }
+    cfg.fields.forEach(f=>{ const inp=wrap.querySelector('[data-k="'+f.k+'"]'); let val;
+      if(f.type==="multiselect"){ val=[...wrap.querySelectorAll('[data-k="'+f.k+'"]:checked')].map(c=>c.value); }
+      else { val=inp.value.trim();
+        if(f.required && !val){ okValid=false; inp.style.borderColor="var(--red)"; } else inp.style.borderColor="";
+        if(f.type==="number") val=val===""?"":Number(val); }
+      data[f.k]=val; });
+    if(!okValid){ alert("请填写必填项（标题/主题）"); return; }
+    if(editItem){ Object.assign(editItem,data); } else { data.id=uid(); data.done=false; (STATE[mk]=STATE[mk]||[]).unshift(data); }
+    const target=editItem||data;
+    const linkChanges=applyLinkage(mk, target);
+    save();
+    if(mk==="side_customer"||mk==="side_supplier") syncProductsFromDynamics();
+    render();
+    const msgs=[];
+    if(linkChanges.length) msgs.push("状态联动更新：\n"+linkChanges.join("\n"));
+    const unlinked=[]; cfg.fields.forEach(f=>{ if(f.type==="ref" && oldRefs[f.k] && !data[f.k]) unlinked.push(oldRefs[f.k]); });
+    if(unlinked.length) msgs.push("已解除关联："+unlinked.join("、"));
+    if(msgs.length) alert(msgs.join("\n\n"));
+  };
+  const cancel=el("button","btn"); cancel.style.minHeight="40px"; cancel.textContent="取消";
+  cancel.onclick=()=>toggleForm(mk,null);
+  acts.appendChild(cancel); acts.appendChild(ok); wrap.appendChild(acts);
+  return wrap;
+}
+function toggleForm(mk,id){
+  const form=$("#form_"+mk); if(!form) return;
+  const open=form.classList.contains("open");
+  // close all
+  document.querySelectorAll(".form.open").forEach(f=>f.classList.remove("open"));
+  if(open) return;
+  form.innerHTML=""; form.appendChild(buildForm(mk, id?STATE[mk].find(x=>x.id===id):null));
+  form.classList.add("open");
+}
+
+/* ---------- 事件 ---------- */
+document.querySelectorAll(".nav-item").forEach(t=>{
+  t.onclick=()=>{ activeSec=t.dataset.sec; document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active")); t.classList.add("active"); editing=null; render(); };
+});
+$("#btnUpdate").onclick=openUpdateCenter;
+$("#btnBannerUpdate").onclick=()=>{ staleList().forEach(mk=>updateModuleContent(mk,false)); renderUpdateBanner(); render(); };
+$("#btnBannerSettings").onclick=openUpdateCenter;
+$("#uCancel").onclick=closeUpdateCenter;
+$("#uUpdateAll").onclick=()=>{ staleList().forEach(mk=>updateModuleContent(mk,false)); renderUpdateCenter(); renderUpdateBanner(); render(); };
+$("#autoUpdate").onchange=e=>{ STATE.autoUpdate=e.target.checked; save(); };
+$("#updateMask").onclick=e=>{ if(e.target.id==="updateMask") closeUpdateCenter(); };
+$("#btnExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(STATE,null,2)],{type:"application/json"});
+  const a=el("a"); a.href=URL.createObjectURL(blob); a.download="双轨工作台备份_"+todayStr()+".json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+};
+$("#btnImport").onclick=()=>$("#fileInput").click();
+$("#btnPLM").onclick=exportPLM;
+$("#fileInput").onchange=e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ const data=JSON.parse(rd.result); if(typeof data!=="object") throw 0;
+      for(const k in MODULES){ if(!Array.isArray(data[k])) data[k]=[]; }
+      STATE=data; save(); render(); alert("导入成功，已恢复数据。"); }
+    catch(err){ alert("导入失败：文件格式不正确。"); } };
+  rd.readAsText(file); e.target.value="";
+};
+let clearStage=0;
+// 恢复示例：用最新种子覆盖「示例标记」条目，保留用户自建（无 __sample），并重建派生产品
+$("#btnResetSample").onclick=()=>{ openModal("用最新示例刷新？","将以最新示例数据覆盖示例条目，并保留你自建的条目（不含示例标记），同时按最新动态重建「我方可提供产品」。",()=>{
+  const fresh=seed();
+  for(const k in MODULES){
+    const kept=(STATE[k]||[]).filter(x=>!x.__sample);     // 用户自建保留
+    const freshSample=fresh[k].filter(x=>x.__sample);      // 最新示例
+    STATE[k]=kept.concat(freshSample);
+  }
+  STATE.SAMPLE_VER=SAMPLE_VER;
+  deriveProductsFromDynamics(STATE);
+  save(); render(); closeModal();
+  alert("已用最新示例刷新（"+SAMPLE_VER+"）。\n虚构采购条目已清除，真实采购与派生产品已生效，你自建的条目已保留。");
+}); };
+$("#btnClear").onclick=()=>{ openModal("确认清空全部数据？","将删除在职与副业所有记录，且不可恢复。此操作建议先点「导出」备份。",()=>{
+  for(const k in MODULES) STATE[k]=[];
+  save(); render(); closeModal(); alert("已清空全部数据。");
+}); };
+function openModal(title,text,onOk){ $("#mTitle").textContent=title; $("#mText").textContent=text;
+  const ok=$("#mOk"); ok.onclick=()=>{ onOk&&onOk(); }; $("#mask").classList.add("open"); }
+function closeModal(){ $("#mask").classList.remove("open"); }
+$("#mCancel").onclick=closeModal;
+$("#mask").onclick=e=>{ if(e.target.id==="mask") closeModal(); };
+
+/* ---------- 左侧二级菜单 ---------- */
+function buildSidebar(){
+  for(const sk in SECTIONS){
+    const sec=SECTIONS[sk];
+    const sub=document.querySelector('.sub-nav[data-sec="'+sk+'"]');
+    if(!sub) continue;
+    sec.modules.forEach(mk=>{
+      const a=el("a","sub-item"); a.dataset.mod=mk; a.textContent=MODULES[mk].title; a.href="javascript:void(0)";
+      a.onclick=()=>scrollToModule(mk);
+      sub.appendChild(a);
+    });
+  }
+}
+function updateSidebar(){
+  document.querySelectorAll(".sub-nav").forEach(s=>{
+    s.classList.toggle("open", s.dataset.sec===activeSec);
+  });
+}
+function scrollToModule(mk){
+  const sec=MODULES[mk].sec;
+  if(sec!==activeSec){ activeSec=sec; render(); }   // 跨分区时先切换并重建右侧主区
+  const node=document.getElementById("mod-"+mk);
+  if(!node) return;
+  node.scrollIntoView({behavior:"smooth",block:"start"});
+  node.classList.add("flash");
+  setTimeout(()=>node.classList.remove("flash"),1400);
+  document.querySelectorAll(".sub-item").forEach(s=>s.classList.toggle("active", s.dataset.mod===mk));
+}
+
+/* ---------- 启动 ---------- */
+buildSidebar();
+// 启动时：若开启自动更新，则刷新过期模块；否则显示待更新横幅
+if(STATE.autoUpdate){ autoUpdateDue(); }
+renderUpdateBanner();
+render();
+
+// 周期性检查（前台运行时）
+setInterval(()=>{
+  renderUpdateBanner();
+  if(STATE.autoUpdate) autoUpdateDue();
+}, 15*60*1000);
+
+// 从后台切回前台时立即检查
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="visible"){
+    renderUpdateBanner();
+    if(STATE.autoUpdate) autoUpdateDue();
+  }
+});
+
+// 注册 Service Worker（让 PWA 可安装、可离线打开）
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
