@@ -17,9 +17,12 @@ iOS Safari 要求 PWA 必须通过 HTTPS 才能启用「添加到主屏幕」后
 只能作为网页预览，无法成为完整 PWA。
 
 推荐部署方式（任选其一）：
-1. GitHub Pages：把本文件夹 push 到仓库，开启 Pages。
+1. GitHub Pages（本应用已部署）：https://roneykimlau.github.io/dual-track-workbench/
 2. Cloudflare Pages / Vercel / Netlify：直接拖拽本文件夹部署。
 3. 自己的服务器 / NAS：通过 HTTPS 发布本文件夹。
+
+本应用已部署在 GitHub Pages，线上地址：https://roneykimlau.github.io/dual-track-workbench/
+仓库：roneykimlau/dual-track-workbench（公开）。更新代码后 push 到 main 分支即自动重新构建。
 
 部署后，用 iPhone Safari 打开 HTTPS 地址：
 • 点击底部分享按钮「↑」
